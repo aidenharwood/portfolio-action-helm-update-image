@@ -33,6 +33,7 @@ runs:
         repository: ${{ inputs.target_repo }}
 
     - name: Update YAML file
+      shell: bash
       run: |
         ## Build full image name
         IMAGE_NAME="${{ inputs.image_name }}"
