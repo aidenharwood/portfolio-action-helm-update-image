@@ -1,0 +1,61 @@
+name: "Docker Build/Push"
+description: "Builds a Docker image and pushes it to a registry"
+
+inputs:
+  push:
+    description: "Whether to push the image to the registry"
+    type: boolean
+    required: true
+    default: true
+  target_repo:
+    description: "Repository to use for the action"
+    required: true
+  registry:
+    description: "Docker registry URL"
+    required: true
+  image_name:
+    description: "Name of the Docker image (including tag)"
+    required: true
+  yaml_file:
+    description: "Path to the YAML file to apply"
+    required: true
+  yaml_path:
+    description: "yq-format path to the variable to update in the YAML file"
+    required: true
+
+
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        repository: ${{ inputs.target_repo }}
+
+    - name: Update YAML file
+      run: |
+        ## Build full image name
+        IMAGE_NAME="${{ inputs.image_name }}"
+        if [[ "${{ inputs.registry}}" ]]; then
+          IMAGE_NAME="${{ inputs.registry }}/$IMAGE_NAME"
+        fi
+
+        ## Update the image in the YAML file
+        yq -i '${{ inputs.yaml_path }} = "${{ inputs.image_name }}"' ${{ inputs.yaml_file }}
+
+        ## Set git user for commit
+        git config user.name "GitHub Action"
+        git config user.email "${{ github.actor }}@users.noreply.github.com"
+
+        git add .
+        echo "==> Check git diff..."
+        mapfile -t GIT_DIFF < <(git diff --cached)
+        if [[ ${#GIT_DIFF[@]} -gt 0 ]]; then
+          echo "==> Committing changes..."
+          git commit -m "[CI] Update image in ${{ inputs.yaml_file }} to $IMAGE_NAME"
+          echo "==> Pushing changes..."
+          git push origin HEAD:${{ github.ref }} --quiet
+        else
+          echo "==> No changes to commit"
+        fi
+        
