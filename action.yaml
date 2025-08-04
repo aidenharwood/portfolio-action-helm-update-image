@@ -10,6 +10,9 @@ inputs:
   target_repo:
     description: "Repository to use for the action"
     required: true
+  repo_token:
+    description: "GitHub token with push access to the target repository"
+    required: true
   registry:
     description: "Docker registry URL"
     required: true
@@ -30,7 +33,7 @@ runs:
     - name: Checkout repository
       uses: actions/checkout@v4
       with:
-        token: ${{ secrets.GH_TOKEN }}
+        token: ${{ inputs.repo_token }}
         repository: ${{ inputs.target_repo }}
 
     - name: Update YAML file
