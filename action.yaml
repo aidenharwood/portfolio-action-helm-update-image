@@ -30,6 +30,7 @@ runs:
     - name: Checkout repository
       uses: actions/checkout@v4
       with:
+        token: ${{ secrets.GH_TOKEN }}
         repository: ${{ inputs.target_repo }}
 
     - name: Update YAML file
